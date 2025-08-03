@@ -1,0 +1,273 @@
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+local HumanoidRootPart = Character:WaitForChild("HumanoidRootPart")
+
+LocalPlayer.CharacterAdded:Connect(function(char)
+    Character = char
+    HumanoidRootPart = char:WaitForChild("HumanoidRootPart")
+end)
+
+-- إنشاء الـ GUI
+local gui = Instance.new("ScreenGui", LocalPlayer:WaitForChild("PlayerGui"))
+gui.Name = "SofyanMasterUI"
+gui.ResetOnSpawn = false
+
+-- أيقونة واجهة قابلة للسحب
+local icon = Instance.new("TextButton", gui)
+icon.Size = UDim2.new(0, 40, 0, 40)
+icon.Position = UDim2.new(0, 20, 0, 20)
+icon.Text = "🌀"
+icon.Font = Enum.Font.SourceSansBold
+icon.TextSize = 28
+icon.TextColor3 = Color3.new(1, 1, 1)
+icon.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+icon.Draggable = true
+icon.Active = true
+
+-- الإطار الرئيسي
+local frame = Instance.new("Frame", gui)
+frame.Size = UDim2.new(0, 330, 0, 400)
+frame.Position = UDim2.new(0, 70, 0, 70)
+frame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+frame.Visible = false
+frame.Draggable = true
+frame.Active = true
+
+-- تحريك العناصر داخل الواجهة
+for _, v in ipairs(frame:GetDescendants()) do
+    if v:IsA("GuiObject") then
+        v.Active = true
+        v.Draggable = true
+    end
+end
+
+icon.MouseButton1Click:Connect(function()
+    frame.Visible = not frame.Visible
+end)
+
+-- العنوان
+local title = Instance.new("TextLabel", frame)
+title.Size = UDim2.new(1, 0, 0, 35)
+title.Text = " 🔥سفيان عمكك☠️ "
+title.Font = Enum.Font.SourceSansBold
+title.TextSize = 22
+title.TextColor3 = Color3.new(1, 1, 1)
+title.BackgroundColor3 = Color3.fromRGB(50, 0, 50)
+
+-- DropDown اختيار التايكون
+local tycoonList = {"Poison", "Wind", "Nature", "Lightning", "Light", "Ice", "Death", "Fire"}
+local selectedTycoon1 = "Death"
+local selectedTycoon2 = "Death"
+
+local function createDropdown(parent, posY, titleText, onSelect)
+    local toggleBtn = Instance.new("TextButton", parent)
+    toggleBtn.Position = UDim2.new(0, 10, 0, posY)
+    toggleBtn.Size = UDim2.new(1, -20, 0, 25)
+    toggleBtn.Text = titleText .. " [إظهار]"
+    toggleBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+    toggleBtn.TextColor3 = Color3.new(1, 1, 1)
+    toggleBtn.Font = Enum.Font.SourceSansBold
+    toggleBtn.TextSize = 18
+
+    local dropdown = Instance.new("ScrollingFrame", parent)
+    dropdown.Position = UDim2.new(0, 10, 0, posY + 25)
+    dropdown.Size = UDim2.new(1, -20, 0, 90)
+    dropdown.CanvasSize = UDim2.new(0, 0, 0, #tycoonList * 30)
+    dropdown.ScrollBarThickness = 4
+    dropdown.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    dropdown.Visible = false
+
+    for i, name in ipairs(tycoonList) do
+        local btn = Instance.new("TextButton", dropdown)
+        btn.Size = UDim2.new(1, 0, 0, 30)
+        btn.Position = UDim2.new(0, 0, 0, (i - 1) * 30)
+        btn.Text = name
+        btn.TextColor3 = Color3.new(1, 1, 1)
+        btn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+        btn.Font = Enum.Font.SourceSans
+        btn.TextSize = 18
+
+        btn.MouseButton1Click:Connect(function()
+            dropdown.Visible = false
+            toggleBtn.Text = titleText .. " [إخفاء]"
+            onSelect(name)
+        end)
+    end
+
+    toggleBtn.MouseButton1Click:Connect(function()
+        dropdown.Visible = not dropdown.Visible
+        toggleBtn.Text = titleText .. (dropdown.Visible and " [إخفاء]" or " [إظهار]")
+    end)
+end
+
+createDropdown(frame, 40, "🧩 تايكون الربح", function(name)
+    selectedTycoon1 = name
+end)
+
+createDropdown(frame, 140, "🗡️ تايكون السرقة", function(name)
+    selectedTycoon2 = name
+end)-- زر "أربح" بالضغط الجنوني على Clicker
+local clicking = false
+local clickBtn = Instance.new("TextButton", frame)
+clickBtn.Position = UDim2.new(0, 10, 0, 240)
+clickBtn.Size = UDim2.new(1, -20, 0, 35)
+clickBtn.Text = "⛏️ اربح [OFF]"
+clickBtn.BackgroundColor3 = Color3.fromRGB(120, 0, 120)
+clickBtn.TextColor3 = Color3.new(1, 1, 1)
+clickBtn.Font = Enum.Font.SourceSansBold
+clickBtn.TextSize = 20
+
+clickBtn.MouseButton1Click:Connect(function()
+	clicking = not clicking
+	clickBtn.Text = "⛏️ اربح [" .. (clicking and "ON" or "OFF") .. "]"
+	if clicking then
+		task.spawn(function()
+			while clicking do
+				local tycoon = workspace.Tycoons.Tycoons:FindFirstChild(selectedTycoon1)
+				if tycoon and tycoon:FindFirstChild("PurchasedObjects") then
+					local mine = tycoon.PurchasedObjects:FindFirstChild("Mine")
+					if mine and mine:FindFirstChild("Model") and mine.Model:FindFirstChild("Clicker") then
+						local clicker = mine.Model.Clicker
+						local clickDetector = clicker:FindFirstChildOfClass("ClickDetector")
+						if clickDetector then
+							fireclickdetector(clickDetector)
+						else
+							firetouchinterest(HumanoidRootPart, clicker, 0)
+							task.wait(0.05)
+							firetouchinterest(HumanoidRootPart, clicker, 1)
+						end
+					end
+				end
+				task.wait(0.05) -- سرعة جنونية
+			end
+		end)
+	end
+end)
+
+-- زر "سرقة الأسلحة"
+local stealing = false
+local stealBtn = Instance.new("TextButton", frame)
+stealBtn.Position = UDim2.new(0, 10, 0, 285)
+stealBtn.Size = UDim2.new(1, -20, 0, 35)
+stealBtn.Text = "🎯 سرقة الأسلحة [OFF]"
+stealBtn.BackgroundColor3 = Color3.fromRGB(100, 50, 0)
+stealBtn.TextColor3 = Color3.new(1, 1, 1)
+stealBtn.Font = Enum.Font.SourceSansBold
+stealBtn.TextSize = 20
+
+stealBtn.MouseButton1Click:Connect(function()
+	stealing = not stealing
+	stealBtn.Text = "🎯 سرقة الأسلحة [" .. (stealing and "ON" or "OFF") .. "]"
+	if stealing then
+		task.spawn(function()
+			while stealing do
+				local tycoon = workspace.Tycoons.Tycoons:FindFirstChild(selectedTycoon2)
+				if tycoon and tycoon:FindFirstChild("PurchasedObjects") then
+					for _, obj in pairs(tycoon.PurchasedObjects:GetChildren()) do
+						local giver = obj:FindFirstChild("Giver")
+						if giver and giver:IsA("BasePart") then
+							local old = HumanoidRootPart.CFrame
+							HumanoidRootPart.CFrame = giver.CFrame + Vector3.new(0, 3, 0)
+							task.wait(0.15)
+							HumanoidRootPart.CFrame = old
+						end
+					end
+				end
+				task.wait(0.5)
+			end
+		end)
+	end
+end)
+
+-- زر الإغلاق
+local closeBtn = Instance.new("TextButton", frame)
+closeBtn.Position = UDim2.new(0.5, -80, 1, -45)
+closeBtn.Size = UDim2.new(0, 160, 0, 35)
+closeBtn.Text = "❌ إغلاق"
+closeBtn.BackgroundColor3 = Color3.fromRGB(150, 0, 0)
+closeBtn.TextColor3 = Color3.new(1, 1, 1)
+closeBtn.Font = Enum.Font.SourceSansBold
+closeBtn.TextSize = 18
+
+closeBtn.MouseButton1Click:Connect(function()
+	frame.Visible = false
+end)-- قائمة تايكونز خاصة بجمع الكاش
+local tycoonNames3 = {"Poison", "Wind", "Nature", "Lightning", "Light", "Ice", "Death"}
+local selectedTycoon3 = tycoonNames3[1]
+
+local toggleDropdown3 = Instance.new("TextButton", frame)
+toggleDropdown3.Position = UDim2.new(0, 10, 0, 330)
+toggleDropdown3.Size = UDim2.new(1, -20, 0, 30)
+toggleDropdown3.Text = "💰 اختيار التايكون لجمع الكاش [إظهار]"
+toggleDropdown3.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+toggleDropdown3.TextColor3 = Color3.new(1, 1, 1)
+toggleDropdown3.Font = Enum.Font.SourceSansBold
+toggleDropdown3.TextSize = 18
+
+local dropdownVisible3 = true
+
+local tycoonDropdown3 = Instance.new("ScrollingFrame", frame)
+tycoonDropdown3.Size = UDim2.new(1, -20, 0, 100)
+tycoonDropdown3.Position = UDim2.new(0, 10, 0, 360)
+tycoonDropdown3.CanvasSize = UDim2.new(0, 0, 0, #tycoonNames3 * 30)
+tycoonDropdown3.ScrollBarThickness = 4
+tycoonDropdown3.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+tycoonDropdown3.Visible = dropdownVisible3
+
+toggleDropdown3.MouseButton1Click:Connect(function()
+    dropdownVisible3 = not dropdownVisible3
+    tycoonDropdown3.Visible = dropdownVisible3
+    toggleDropdown3.Text = "💰 اختيار التايكون لجمع الكاش [" .. (dropdownVisible3 and "إظهار" or "إخفاء") .. "]"
+end)
+
+for i, name in ipairs(tycoonNames3) do
+    local btn = Instance.new("TextButton", tycoonDropdown3)
+    btn.Size = UDim2.new(1, 0, 0, 30)
+    btn.Position = UDim2.new(0, 0, 0, (i - 1) * 30)
+    btn.Text = name
+    btn.TextColor3 = Color3.new(1,1,1)
+    btn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    btn.Font = Enum.Font.SourceSans
+    btn.TextSize = 18
+
+    btn.MouseButton1Click:Connect(function()
+        selectedTycoon3 = name
+        dropdownVisible3 = false
+        tycoonDropdown3.Visible = false
+        toggleDropdown3.Text = "💰 اختيار التايكون لجمع الكاش [إخفاء]"
+    end)
+end
+
+-- زر تشغيل/إيقاف جمع الكاش
+local collectingCash = false
+local cashBtn = Instance.new("TextButton", frame)
+cashBtn.Position = UDim2.new(0, 10, 0, 470)
+cashBtn.Size = UDim2.new(1, -20, 0, 35)
+cashBtn.Text = "💰 جمع الكاش [OFF]"
+cashBtn.BackgroundColor3 = Color3.fromRGB(0, 0, 150)
+cashBtn.TextColor3 = Color3.new(1, 1, 1)
+cashBtn.Font = Enum.Font.SourceSansBold
+cashBtn.TextSize = 20
+
+cashBtn.MouseButton1Click:Connect(function()
+    collectingCash = not collectingCash
+    cashBtn.Text = "💰 جمع الكاش [" .. (collectingCash and "ON" or "OFF") .. "]"
+    if collectingCash then
+        task.spawn(function()
+            while collectingCash do
+                local tycoon = workspace.Tycoons.Tycoons:FindFirstChild(selectedTycoon3)
+                if tycoon then
+                    local giver = tycoon:FindFirstChild("Essentials") and tycoon.Essentials:FindFirstChild("Giver")
+                    if giver then
+                        local oldCFrame = HumanoidRootPart.CFrame
+                        HumanoidRootPart.CFrame = giver.CFrame + Vector3.new(0, 3, 0)
+                        task.wait(0.3)
+                        HumanoidRootPart.CFrame = oldCFrame
+                    end
+                end
+                task.wait(25)
+            end
+        end)
+    end
+end)
